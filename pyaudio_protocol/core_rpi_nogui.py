@@ -95,17 +95,17 @@ class sound_trig_Thread(Thread):
             sound_data = np.concatenate((sound_data, padd_end), axis=0)
             logger.info('with padding')
 
+            #try:
+            self.stream.start()
+            GPIO.output(GPIO_trigOn,1)
             try:
-                self.stream.start()
-                GPIO.output(GPIO_trigOn,1)
                 self.stream.write(sound_data)
                 self.stream.stop()
             except sd.PortAudioError:
                 logger.warning('catch Exception :')
                 logger.warning(sd.PortAudioError)
                 return
-            except :
-                return
+
 
             GPIO.output(GPIO_trigOn, 0)
             logger.info('isi : ', isi)
@@ -178,8 +178,13 @@ class PyAudio_protocol_rpi():
         logger.debug('press start')
         if not self.playing():
             logger.debug('started')
-            self.sound_trig_Thread.start()
-            self._playing = True
+            when_pressed = time.time()
+            while GPIO.input(self.config_GPIO['butStart']):
+                time.sleep(0.001)
+                time_pressed = time.time() - when_pressed
+                if time_pressed > 1:
+                    self.sound_trig_Thread.start()
+                    self._playing = True
 
 
     def onStopButton(self, numGPIO):
@@ -187,10 +192,10 @@ class PyAudio_protocol_rpi():
         when_pressed = time.time()
         while GPIO.input(self.config_GPIO['butStop']):
             time.sleep(0.001)
-            pass
         time_pressed = time.time() - when_pressed
         if time_pressed > 2:
             self.stop()
+            return
 
 
     def start(self):
