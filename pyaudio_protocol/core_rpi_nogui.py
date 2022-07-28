@@ -87,6 +87,14 @@ class sound_trig_Thread(Thread):
             isi = round(row['ISI'] * 10**-3, 3)
             logger.info('Reading {}'.format(row['Stimulus']))
 
+                       
+            # Add 0 padding to improves sound quality (in cas of very short sounds)
+            #padd_init = np.zeros((round(sample_rate*0.01), sound_data.shape[1]), dtype=self.sound_dtype) # add 10ms latency (constant)
+            padd_end = np.zeros((round(sample_rate*0.05), sound_data.shape[1]), dtype=self.sound_dtype) # add 50ms -> removed from ISI
+            isi -= 0.05
+            sound_data = np.concatenate((sound_data, padd_end), axis=0)
+            logger.info('with padding')
+
             try:
                 self.stream.start()
                 GPIO.output(GPIO_trigOn,1)
